@@ -10,7 +10,7 @@
     "dev": "node --loader ts-node/esm src/index.ts"
   },
   "keywords": [],
-  "engines": { "node": ">=18" },
+  "engines": { "node": ">=20" },
   "author": "",
   "license": "ISC",
   "description": "",
