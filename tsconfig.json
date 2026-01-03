@@ -4,6 +4,9 @@
     // File Layout
     // "rootDir": "./src",
     // "outDir": "./dist",
+        "outDir": "dist",
+    "rootDir": "src",
+    "resolveJsonModule": true,
     "target": "ES2020",
     "module": "NodeNext",
     "moduleResolution": "NodeNext",
@@ -41,5 +44,6 @@
     "isolatedModules": true,
     "noUncheckedSideEffectImports": true,
     "moduleDetection": "force",
-  }
+  },
+   "include": ["src/**/*.ts"]
 }
