@@ -107,7 +107,10 @@ async function main() {
     throw new Error(`Missing wordbank at ${WORDBANK_PATH}. Create data/wordbank.json`);
   }
 
-  const { state, saveCreds } = await useMultiFileAuthState("auth");
+  // ✅ Persist auth wherever you want (Railway volume: mount /data then set AUTH_DIR=/data/auth_info)
+  const AUTH_DIR = process.env.AUTH_DIR || "auth";
+  const { state, saveCreds } = await useMultiFileAuthState(AUTH_DIR);
+
   const { version } = await fetchLatestBaileysVersion();
 
   const sock = makeWASocket({
@@ -118,18 +121,45 @@ async function main() {
 
   sock.ev.on("creds.update", saveCreds);
 
-  sock.ev.on("connection.update", (update) => {
+  // ✅ Pairing code mode (no QR)
+  // Railway vars:
+  //   PAIRING=true
+  //   PHONE_NUMBER=54911XXXXXXXX  (digits only, country code + number)
+  const USE_PAIRING = (process.env.PAIRING || "").toLowerCase() === "true";
+  const PHONE_NUMBER = (process.env.PHONE_NUMBER || "").replace(/\D/g, ""); // digits only
+  let pairingRequested = false;
+
+  sock.ev.on("connection.update", async (update) => {
     const { connection, lastDisconnect, qr } = update;
 
-    if (qr) {
+    // If we're not registered yet, optionally request pairing code once
+    if (USE_PAIRING && !sock.authState.creds.registered && !pairingRequested) {
+      pairingRequested = true;
+
+      if (!PHONE_NUMBER) {
+        console.error("❌ PAIRING=true but PHONE_NUMBER is missing. Set PHONE_NUMBER (country code + number, digits only).");
+      } else {
+        try {
+          const code = await sock.requestPairingCode(PHONE_NUMBER);
+          console.log("\n🔗 Pairing code (WhatsApp → Linked devices → Link with phone number):\n");
+          console.log("PAIRING CODE:", code, "\n");
+        } catch (e) {
+          console.error("❌ Failed to request pairing code:", e);
+        }
+      }
+    }
+
+    // If not using pairing (or as fallback), show QR
+    if (!USE_PAIRING && qr) {
       console.log("\nScan this QR with WhatsApp (Linked Devices):\n");
       qrcode.generate(qr, { small: true });
     }
 
     if (connection === "close") {
       const reason = (lastDisconnect?.error as any)?.output?.statusCode;
+
       if (reason === DisconnectReason.loggedOut) {
-        console.error("Logged out. Delete auth/ and re-scan QR.");
+        console.error(`Logged out. Delete ${AUTH_DIR}/ and re-link.`);
       } else {
         console.warn("Connection closed. Reconnecting...");
         main().catch(console.error);
@@ -193,8 +223,9 @@ async function main() {
                 : 0;
 
         if (groupWait > 0) {
-          // replying every time can also be spammy, but this is OK for now
-          await sock.sendMessage(chatJid, { text: `⏳ Cooldown: try again in ${Math.ceil(groupWait / 1000)}s.` });
+          await sock.sendMessage(chatJid, {
+            text: `⏳ Cooldown: try again in ${Math.ceil(groupWait / 1000)}s.`,
+          });
           continue;
         }
 
