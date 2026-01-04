@@ -131,33 +131,20 @@ async function main() {
 
   sock.ev.on("creds.update", saveCreds);
 
-  // ✅ Pairing code mode (no QR)
-  // Railway vars:
-  //   PAIRING=true
-  //   PHONE_NUMBER=54911XXXXXXXX  (digits only, country code + number)
   const USE_PAIRING = (process.env.PAIRING || "").toLowerCase() === "true";
-  const PHONE_NUMBER = (process.env.PHONE_NUMBER || "").replace(/\D/g, ""); // digits only
+  const PHONE_NUMBER = (process.env.PHONE_NUMBER || "").replace(/\D/g, "");
+
+  if (USE_PAIRING && !sock.authState.creds.registered) {
+    if (!PHONE_NUMBER) {
+      console.error("❌ PAIRING=true but PHONE_NUMBER is missing.");
+    } else {
+      requestPairingCodeSafely(sock, PHONE_NUMBER).catch((e) => console.error(e));
+    }
+  }
   let pairingRequested = false;
 
   sock.ev.on("connection.update", async (update) => {
     const { connection, lastDisconnect, qr } = update;
-
-    // If we're not registered yet, optionally request pairing code once
-    if (USE_PAIRING && !sock.authState.creds.registered && !pairingRequested) {
-      pairingRequested = true;
-
-      if (!PHONE_NUMBER) {
-        console.error("❌ PAIRING=true but PHONE_NUMBER is missing. Set PHONE_NUMBER (country code + number, digits only).");
-      } else {
-        try {
-          const code = await sock.requestPairingCode(PHONE_NUMBER);
-          console.log("\n🔗 Pairing code (WhatsApp → Linked devices → Link with phone number):\n");
-          console.log("PAIRING CODE:", code, "\n");
-        } catch (e) {
-          console.error("❌ Failed to request pairing code:", e);
-        }
-      }
-    }
 
     // If not using pairing (or as fallback), show QR
     if (!USE_PAIRING && qr) {
@@ -166,15 +153,16 @@ async function main() {
     }
 
     if (connection === "close") {
-      const reason = (lastDisconnect?.error as any)?.output?.statusCode;
+      const statusCode = (lastDisconnect?.error as any)?.output?.statusCode;
 
-      if (reason === DisconnectReason.loggedOut) {
+      if (statusCode === DisconnectReason.loggedOut) {
         console.error(`Logged out. Delete ${AUTH_DIR}/ and re-link.`);
       } else {
-        console.warn("Connection closed. Reconnecting...");
+        console.warn(`Connection closed (status ${statusCode ?? "?"}). Reconnecting...`);
         main().catch(console.error);
       }
     }
+
 
     if (connection === "open") {
       const me = sock.user?.id;
@@ -400,3 +388,29 @@ main().catch((err) => {
   console.error(err);
   process.exit(1);
 });
+
+async function requestPairingCodeSafely(sock: any, phone: string) {
+  // Wait for the connection to be open
+  await sock.waitForConnectionUpdate((u: any) => u.connection === "open");
+
+  // Give WA a moment (prevents 428 on some hosts)
+  await sleep(2500);
+
+  // Retry a few times if WA closes the connection
+  for (let attempt = 1; attempt <= 5; attempt++) {
+    try {
+      const code = await sock.requestPairingCode(phone);
+      console.log("\n🔗 Pairing code (WhatsApp → Linked devices → Link with phone number):");
+      console.log("PAIRING CODE:", code, "\n");
+      return;
+    } catch (err: any) {
+      const status = err?.output?.statusCode;
+      console.error(`❌ Pairing attempt ${attempt} failed (status ${status ?? "?"}).`);
+
+      // If socket got closed, wait a bit and let reconnection happen
+      await sleep(3000);
+    }
+  }
+
+  throw new Error("Could not get pairing code after multiple attempts.");
+}
