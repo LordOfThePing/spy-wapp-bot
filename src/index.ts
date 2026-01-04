@@ -130,49 +130,48 @@ async function main() {
   });
 
   sock.ev.on("creds.update", saveCreds);
-
   const USE_PAIRING = (process.env.PAIRING || "").toLowerCase() === "true";
   const PHONE_NUMBER = (process.env.PHONE_NUMBER || "").replace(/\D/g, "");
+  let pairingRequested = false;
 
-  console.log("🔧 Boot:", {
-    USE_PAIRING,
-    registered: sock.authState.creds.registered,
-    hasPhone: Boolean(PHONE_NUMBER),
-    authDir: AUTH_DIR,
-  });
+  async function tryRequestPairing(sock: any) {
+    if (!USE_PAIRING) return;
+    if (sock.authState.creds.registered) return;
+    if (pairingRequested) return;
 
-  if (USE_PAIRING && !sock.authState.creds.registered) {
-    if (!PHONE_NUMBER) {
-      console.error("❌ PAIRING=true but PHONE_NUMBER is missing (digits only, country code + number).");
-    } else {
-      requestPairingCodeSafely(sock, PHONE_NUMBER).catch((e) => {
-        console.error("❌ Pairing failed. Falling back to QR if available.", e);
-        // allow QR fallback by toggling env var or just rely on qr handler below
-      });
+    pairingRequested = true;
+
+    // small delay helps avoid the 428 race
+    await sleep(2500);
+
+    for (let attempt = 1; attempt <= 6; attempt++) {
+      try {
+        const code = await sock.requestPairingCode(PHONE_NUMBER);
+        console.log("\n🔗 Pairing code (WhatsApp → Linked devices → Link with phone number):");
+        console.log("PAIRING CODE:", code, "\n");
+        return;
+      } catch (err: any) {
+        const status = err?.output?.statusCode;
+        console.error(`❌ Pairing attempt ${attempt} failed (status ${status ?? "?"}). Retrying...`);
+        await sleep(3000);
+      }
     }
-  }
-  sock.ev.on("connection.update", async (update) => {
-    const { connection, lastDisconnect, qr } = update;
 
-    // ✅ QR fallback even when PAIRING=true (only if not registered yet)
+    console.error("❌ Could not get pairing code. Use QR fallback.");
+  }
+
+  sock.ev.on("connection.update", (update) => {
+    const { qr } = update;
+
+    // Always print QR as fallback
     if (qr && !sock.authState.creds.registered) {
       console.log("\n📷 QR available (fallback). Scan in WhatsApp → Linked devices:\n");
       qrcode.generate(qr, { small: true });
     }
 
-    if (connection === "close") {
-      const statusCode = (lastDisconnect?.error as any)?.output?.statusCode;
-
-      if (statusCode === DisconnectReason.loggedOut) {
-        console.error(`Logged out. Delete ${AUTH_DIR}/ and re-link.`);
-      } else {
-        console.warn(`Connection closed (status ${statusCode ?? "?"}). Reconnecting...`);
-        main().catch(console.error);
-      }
-    }
-
-    if (connection === "open") {
-      console.log("✅ Socket open");
+    // Kick off pairing attempts as soon as updates start flowing
+    if (!sock.authState.creds.registered && USE_PAIRING) {
+      tryRequestPairing(sock).catch(console.error);
     }
   });
 
