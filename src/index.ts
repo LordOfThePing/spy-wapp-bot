@@ -109,6 +109,16 @@ async function main() {
 
   // ✅ Persist auth wherever you want (Railway volume: mount /data then set AUTH_DIR=/data/auth_info)
   const AUTH_DIR = process.env.AUTH_DIR || "auth";
+
+  // OPTIONAL: only wipe when explicitly requested
+  if (process.env.RESET_AUTH === "true") {
+    console.log("🧹 RESET_AUTH=true → deleting auth directory");
+
+    if (fs.existsSync(AUTH_DIR)) {
+      fs.rmSync(AUTH_DIR, { recursive: true, force: true });
+    }
+  }
+
   const { state, saveCreds } = await useMultiFileAuthState(AUTH_DIR);
 
   const { version } = await fetchLatestBaileysVersion();
