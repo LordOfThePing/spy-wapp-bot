@@ -134,21 +134,29 @@ async function main() {
   const USE_PAIRING = (process.env.PAIRING || "").toLowerCase() === "true";
   const PHONE_NUMBER = (process.env.PHONE_NUMBER || "").replace(/\D/g, "");
 
+  console.log("🔧 Boot:", {
+    USE_PAIRING,
+    registered: sock.authState.creds.registered,
+    hasPhone: Boolean(PHONE_NUMBER),
+    authDir: AUTH_DIR,
+  });
+
   if (USE_PAIRING && !sock.authState.creds.registered) {
     if (!PHONE_NUMBER) {
-      console.error("❌ PAIRING=true but PHONE_NUMBER is missing.");
+      console.error("❌ PAIRING=true but PHONE_NUMBER is missing (digits only, country code + number).");
     } else {
-      requestPairingCodeSafely(sock, PHONE_NUMBER).catch((e) => console.error(e));
+      requestPairingCodeSafely(sock, PHONE_NUMBER).catch((e) => {
+        console.error("❌ Pairing failed. Falling back to QR if available.", e);
+        // allow QR fallback by toggling env var or just rely on qr handler below
+      });
     }
   }
-  let pairingRequested = false;
-
   sock.ev.on("connection.update", async (update) => {
     const { connection, lastDisconnect, qr } = update;
 
-    // If not using pairing (or as fallback), show QR
-    if (!USE_PAIRING && qr) {
-      console.log("\nScan this QR with WhatsApp (Linked Devices):\n");
+    // ✅ QR fallback even when PAIRING=true (only if not registered yet)
+    if (qr && !sock.authState.creds.registered) {
+      console.log("\n📷 QR available (fallback). Scan in WhatsApp → Linked devices:\n");
       qrcode.generate(qr, { small: true });
     }
 
@@ -163,12 +171,8 @@ async function main() {
       }
     }
 
-
     if (connection === "open") {
-      const me = sock.user?.id;
-      console.log("✅ Connected as:", me);
-      console.log("📱 Number:", me?.split("@")[0]);
-      console.log("Tip: Players must DM the bot once (say 'hi') to opt-in for DMs.");
+      console.log("✅ Socket open");
     }
   });
 
@@ -390,13 +394,21 @@ main().catch((err) => {
 });
 
 async function requestPairingCodeSafely(sock: any, phone: string) {
-  // Wait for the connection to be open
-  await sock.waitForConnectionUpdate((u: any) => u.connection === "open");
+  console.log("⏳ Waiting for WhatsApp connection to open...");
 
-  // Give WA a moment (prevents 428 on some hosts)
-  await sleep(2500);
+  // timeout after 30s so you SEE something if it never opens
+  const opened = await Promise.race([
+    sock.waitForConnectionUpdate((u: any) => u.connection === "open").then(() => true),
+    sleep(30_000).then(() => false),
+  ]);
 
-  // Retry a few times if WA closes the connection
+  if (!opened) {
+    throw new Error("Timed out waiting for connection to open (30s). QR fallback should appear if available.");
+  }
+
+  console.log("✅ Connection open. Requesting pairing code...");
+  await sleep(2500); // avoids 428 race
+
   for (let attempt = 1; attempt <= 5; attempt++) {
     try {
       const code = await sock.requestPairingCode(phone);
@@ -405,9 +417,7 @@ async function requestPairingCodeSafely(sock: any, phone: string) {
       return;
     } catch (err: any) {
       const status = err?.output?.statusCode;
-      console.error(`❌ Pairing attempt ${attempt} failed (status ${status ?? "?"}).`);
-
-      // If socket got closed, wait a bit and let reconnection happen
+      console.error(`❌ Pairing attempt ${attempt} failed (status ${status ?? "?"}). Retrying...`);
       await sleep(3000);
     }
   }
