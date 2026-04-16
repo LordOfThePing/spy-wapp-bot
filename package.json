@@ -1,13 +1,13 @@
 {
   "name": "spy-whatsapp-bot",
   "version": "1.0.0",
-  "main": "index.js",
+  "main": "dist/index.js",
   "type": "module",
   "scripts": {
-    "build": "tsc",
+    "build": "tsc -p tsconfig.json",
     "start": "node dist/index.js",
-    "test": "echo \"Error: no test specified\" && exit 1",
-    "dev": "node --loader ts-node/esm src/index.ts"
+    "dev": "node --loader ts-node/esm src/index.ts",
+    "test": "node --test dist/tests/**/*.test.js"
   },
   "keywords": [],
   "engines": {
@@ -15,13 +15,14 @@
   },
   "author": "",
   "license": "ISC",
-  "description": "",
+  "description": "WhatsApp impostor game bot powered by Baileys",
   "dependencies": {
     "@whiskeysockets/baileys": "^7.0.0-rc.9",
     "pino": "^10.1.0",
     "pino-pretty": "^13.1.3",
     "qrcode": "^1.5.4",
-    "qrcode-terminal": "^0.12.0"
+    "qrcode-terminal": "^0.12.0",
+    "zod": "^4.3.6"
   },
   "devDependencies": {
     "@types/node": "^25.0.3",

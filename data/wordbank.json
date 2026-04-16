@@ -1,5 +1,37 @@
 {
-  "football": ["Messi", "Ronaldo", "Maradona", "Boca", "River", "Camp Nou"],
-  "movies": ["Titanic", "Inception", "The Godfather", "Interstellar"],
-  "countries": ["Argentina", "Austria", "Japan", "Canada", "Brazil"]
+  "sports": {
+    "easy": ["futbol", "basquet", "tenis", "golf", "voley", "boxeo", "natacion", "ciclismo", "rugby", "padel", "karate", "hockey"],
+    "medium": ["maraton", "estadio", "arbitro", "medalla", "capitan", "entrenador", "penal", "saque", "defensa", "ataque", "torneo", "campeonato"],
+    "hard": ["contraataque", "fuera_de_juego", "triatlon", "estilo_libre", "dribling", "pressing", "reglamento", "clasificatoria", "sudamericana", "olimpiadas", "decatlon", "resistencia"]
+  },
+  "movies": {
+    "easy": ["avatar", "titanic", "joker", "frozen", "gladiador", "shrek", "cars", "coco", "batman", "superman", "spiderman", "aladdin"],
+    "medium": ["interestelar", "inception", "godfather", "matrix", "casablanca", "scarface", "parasite", "amelie", "whiplash", "rocky", "dune", "oppenheimer"],
+    "hard": ["guion", "cinematografia", "taquillera", "banda_sonora", "secuela", "precuela", "montaje", "plano", "fotograma", "narrativa", "direccion", "produccion"]
+  },
+  "countries": {
+    "easy": ["argentina", "brasil", "japon", "canada", "italia", "mexico", "chile", "peru", "francia", "alemania", "uruguay", "colombia"],
+    "medium": ["capital", "frontera", "pasaporte", "moneda", "idioma", "continente", "embajada", "turismo", "aduana", "cultura", "mapa", "bandera"],
+    "hard": ["soberania", "diplomacia", "hemisferio", "archipielago", "geopolitica", "federalismo", "migracion", "demografia", "tratado", "bicameral", "jurisdiccion", "autonomia"]
+  },
+  "food": {
+    "easy": ["pizza", "hamburguesa", "pasta", "arroz", "ensalada", "asado", "sushi", "empanada", "taco", "pan", "queso", "helado"],
+    "medium": ["receta", "cocina", "postre", "especias", "desayuno", "almuerzo", "merienda", "salsa", "horno", "sarten", "parrilla", "cuchillo"],
+    "hard": ["fermentacion", "caramelizacion", "marinado", "umami", "confitado", "emulsion", "reduccion", "mise_en_place", "pasteurizacion", "desglasar", "blanquear", "gratinar"]
+  },
+  "tecnologia": {
+    "easy": ["celular", "computadora", "internet", "teclado", "mouse", "pantalla", "wifi", "cargador", "app", "camara", "tablet", "usb"],
+    "medium": ["servidor", "nube", "router", "base_de_datos", "algoritmo", "firewall", "backend", "frontend", "api", "script", "kernel", "latencia"],
+    "hard": ["contenedor", "orquestacion", "criptografia", "replicacion", "compilador", "virtualizacion", "balanceador", "escalabilidad", "idempotencia", "telemetria", "serializacion", "autenticacion"]
+  },
+  "animales": {
+    "easy": ["perro", "gato", "caballo", "vaca", "oveja", "leon", "tigre", "elefante", "mono", "conejo", "zorro", "oso"],
+    "medium": ["manada", "selva", "granja", "depredador", "herbivoro", "acuatico", "plumaje", "migracion", "madriguera", "camuflaje", "huella", "instinto"],
+    "hard": ["ecosistema", "biodiversidad", "metamorfosis", "endemico", "anfibio", "oviparo", "viviparo", "nocturno", "territorial", "omnivoro", "hibernacion", "bioma"]
+  },
+  "profesiones": {
+    "easy": ["doctor", "maestro", "abogado", "chef", "policia", "bombero", "ingeniero", "arquitecto", "periodista", "chofer", "contador", "dentista"],
+    "medium": ["hospital", "juzgado", "obra", "oficina", "guardia", "audiencia", "cirugia", "diagnostico", "cliente", "proyecto", "consulta", "presupuesto"],
+    "hard": ["jurisprudencia", "anestesia", "licitacion", "facturacion", "logistica", "protocolizacion", "auditoria", "intervencion", "capacitacion", "negociacion", "infraestructura", "planificacion"]
+  }
 }

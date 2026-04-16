@@ -1,0 +1,15 @@
+services:
+  spy-bot:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: spy-wapp-bot
+    restart: unless-stopped
+    environment:
+      - NODE_ENV=production
+      - AUTH_DIR=/app/auth
+    volumes:
+      - ./auth:/app/auth
+      - ./data:/app/data
+    stdin_open: true
+    tty: true
