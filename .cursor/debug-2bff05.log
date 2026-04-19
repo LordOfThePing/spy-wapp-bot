@@ -1,0 +1,9 @@
+{"sessionId":"2bff05","hypothesisId":"B","location":"client.ts:createClient","message":"auth snapshot (no secrets)","data":{"registered":false,"hasMe":true,"authDirLen":9,"containerHostname":"fcaaf00ee1fb"},"timestamp":1776540389059}
+{"sessionId":"2bff05","hypothesisId":"C","location":"client.ts:createClient","message":"negotiated WA version tuple","data":{"version":[2,3000,1035194821]},"timestamp":1776540389190}
+{"sessionId":"2bff05","hypothesisId":"D","location":"client.ts:connection.update","message":"connection update","data":{"seq":1,"connection":"connecting","hasQr":false,"isRestartRequired":false,"nodeEnv":"production"},"timestamp":1776540389210}
+{"sessionId":"2bff05","hypothesisId":"D","location":"client.ts:connection.update","message":"connection update","data":{"seq":2,"hasQr":false,"isRestartRequired":false,"nodeEnv":"production"},"timestamp":1776540390221}
+{"sessionId":"2bff05","hypothesisId":"D","location":"client.ts:connection.update","message":"connection update","data":{"seq":4,"connection":"open","hasQr":false,"isRestartRequired":false,"nodeEnv":"production"},"timestamp":1776540390429}
+{"sessionId":"2bff05","hypothesisId":"D","location":"client.ts:connection.update","message":"connection update","data":{"seq":3,"hasQr":false,"isRestartRequired":false,"nodeEnv":"production"},"timestamp":1776540390428}
+{"sessionId":"2bff05","hypothesisId":"B","location":"group.ts:!impostor start","message":"opt-in gate summary","data":{"participantCount":3,"notOptedCount":3,"lidParticipantCount":3},"timestamp":1776541425401}
+{"sessionId":"2bff05","hypothesisId":"B","location":"group.ts:!impostor start","message":"opt-in gate summary","data":{"participantCount":3,"notOptedCount":3,"lidParticipantCount":3},"timestamp":1776541857414}
+{"sessionId":"2bff05","hypothesisId":"A","location":"messageRouter.ts:private:optIn","message":"opt-in jid shape","data":{"server":"lid","isLid":true},"timestamp":1776541866159}

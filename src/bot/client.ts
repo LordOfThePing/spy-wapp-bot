@@ -14,7 +14,7 @@ export async function createClient(authDir: string) {
   });
 
   sock.ev.on("creds.update", saveCreds);
-  sock.ev.on("connection.update", ({ connection, qr, lastDisconnect }) => {
+  sock.ev.on("connection.update", ({ connection, qr }) => {
     if (qr) {
       qrcode.generate(qr, { small: true });
     }

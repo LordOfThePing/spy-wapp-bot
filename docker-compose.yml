@@ -8,6 +8,8 @@ services:
     environment:
       - NODE_ENV=production
       - AUTH_DIR=/app/auth
+      - EXCLUDED_PLAYER_PHONE=${EXCLUDED_PLAYER_PHONE:-}
+      - DEBUG_INGEST_URL=http://host.docker.internal:7745/ingest/bcf066ba-7811-40ec-ac81-1b79d518da24
     volumes:
       - ./auth:/app/auth
       - ./data:/app/data

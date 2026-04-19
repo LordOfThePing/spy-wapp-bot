@@ -1,18 +1,24 @@
+import { isLidUser } from "@whiskeysockets/baileys";
 import { z } from "zod";
+import type { GroupParticipantRow } from "../bot/whatsappIdentity.js";
 import { createCitizenMessage, createImpostorMessage, startRound } from "../game/engine.js";
 import { listCategories, loadWordBank } from "../game/wordSelector.js";
 import type { GroupConfigStore } from "../storage/groupConfigStore.js";
 import type { GameStateStore } from "../storage/gameStateStore.js";
 import type { Difficulty, GroupGameState } from "../game/models.js";
 
+const AGENT_DEBUG_INGEST =
+  process.env.DEBUG_INGEST_URL ??
+  "http://127.0.0.1:7745/ingest/bcf066ba-7811-40ec-ac81-1b79d518da24";
+
 type Context = {
   groupJid: string;
   dataDir: string;
   senderJid: string;
-  isOptedIn: (jid: string) => boolean;
+  isOptedIn: (jid: string) => Promise<boolean>;
   configStore: GroupConfigStore;
   gameStore: GameStateStore;
-  getGroupParticipants: () => Promise<string[]>;
+  getGroupParticipants: () => Promise<GroupParticipantRow[]>;
   sendGroup: (text: string) => Promise<void>;
   sendPrivate: (jid: string, text: string) => Promise<void>;
 };
@@ -114,9 +120,30 @@ export async function handleGroupCommand(commandLine: string, ctx: Context): Pro
       return true;
     }
 
-    const notOpted = participants.filter((jid) => !ctx.isOptedIn(jid));
+    const notOpted: GroupParticipantRow[] = [];
+    for (const p of participants) {
+      if (!(await ctx.isOptedIn(p.jid))) notOpted.push(p);
+    }
+    // #region agent log
+    fetch(AGENT_DEBUG_INGEST, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", "X-Debug-Session-Id": "2bff05" },
+      body: JSON.stringify({
+        sessionId: "2bff05",
+        hypothesisId: "B",
+        location: "group.ts:!impostor start",
+        message: "opt-in gate summary",
+        data: {
+          participantCount: participants.length,
+          notOptedCount: notOpted.length,
+          lidParticipantCount: participants.filter((row) => isLidUser(row.jid)).length,
+        },
+        timestamp: Date.now(),
+      }),
+    }).catch(() => {});
+    // #endregion
     if (notOpted.length > 0) {
-      const listado = notOpted.map((jid) => `- @${jid.split("@")[0]}`).join("\n");
+      const listado = notOpted.map((p) => `- ${p.displayName}`).join("\n");
       await ctx.sendGroup(
         [
           "Antes de iniciar, estos jugadores deben escribirle al bot por privado (ej: hola o listo):",
@@ -131,7 +158,7 @@ export async function handleGroupCommand(commandLine: string, ctx: Context): Pro
     const baseState: GroupGameState = {
       groupJid: ctx.groupJid,
       phase: "lobby",
-      players: participants.map((jid) => ({ jid, joinedAt: Date.now() })),
+      players: participants.map((p) => ({ jid: p.jid, joinedAt: Date.now() })),
       impostors: [],
       createdAt: Date.now(),
     };
